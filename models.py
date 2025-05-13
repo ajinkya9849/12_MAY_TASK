@@ -9,3 +9,6 @@ class Service(BaseModel):
     timings: str
     cost: str
     available: bool
+    latitude: float
+    longitude: float
+    contact: str
