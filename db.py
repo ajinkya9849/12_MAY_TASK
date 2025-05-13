@@ -23,7 +23,7 @@ def insert_services(services: list[Service]):
     ]
     client.upsert(collection_name=COLLECTION_NAME, points=points)
 
-def search_nearby(lat: float, lon: float, top_k: int = 5):
+def search_nearby(lat: float, lon: float, top_k: int = 100):  # increased from 5 to 100
     hits = client.search(
         collection_name=COLLECTION_NAME,
         query_vector=[lat, lon],
