@@ -3,9 +3,9 @@ from db import insert_services, search_nearby
 from utils import parse_csv, extract_location_and_service
 from models import Service
 import requests
+from geopy.distance import geodesic
 
 app = FastAPI()
-from models import Service
 
 @app.post("/add_service/")
 async def add_service(service: Service):
@@ -18,6 +18,7 @@ async def upload(file: UploadFile = File(...)):
     services = parse_csv(file)
     insert_services(services)
     return {"message": f"{len(services)} services uploaded successfully."}
+
 
 @app.get("/get_help/")
 def get_help(query: str = Query(..., description="Emergency message from user")):
@@ -36,12 +37,19 @@ def get_help(query: str = Query(..., description="Emergency message from user"))
         return {"error": f"Location '{location}' not found."}
 
     lat, lon = float(geo_data[0]['lat']), float(geo_data[0]['lon'])
-    results = search_nearby(lat, lon)
+    results = search_nearby(lat, lon, top_k=100)
+
+    # Filter by radius (e.g., 10km)
+    radius_km = 10
+    filtered_by_radius = [
+        r for r in results
+        if geodesic((lat, lon), (r['latitude'], r['longitude'])).km <= radius_km
+    ]
 
     if service_keyword:
-        filtered = [r for r in results if service_keyword.lower() in r['type'].lower()]
+        filtered = [r for r in filtered_by_radius if service_keyword.lower() in r.get('type', '').lower()]
     else:
-        filtered = results
+        filtered = filtered_by_radius
 
     return {
         "original_message": query,
